@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>캠핑장비 모으기</title>
+<style>
+  :root {
+    --bg: #eef3e6;
+    --fg: #1d2b1a;
+    --card: #fff;
+    --bd: #c9d6bd;
+    --btn: #3f7d32;
+    --btnfg: #fff;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1a2217;
+      --fg: #e8f0e2;
+      --card: #25301f;
+      --bd: #3a4a33;
+      --btn: #5aa44a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1a2217;
+    --fg: #e8f0e2;
+    --card: #25301f;
+    --bd: #3a4a33;
+    --btn: #5aa44a;
+  }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  body {
+    padding: 8px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  #top {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    margin-bottom: 6px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  canvas {
+    width: 100%;
+    height: 62vh;
+    min-height: 300px;
+    border-radius: 10px;
+    border: 2px solid var(--bd);
+    display: block;
+    touch-action: none;
+  }
+  .row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 6px 0;
+  }
+  button {
+    background: var(--btn);
+    color: var(--btnfg);
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  button:active {
+    transform: scale(0.97);
+  }
+  .chip {
+    background: var(--card);
+    color: var(--fg);
+    border: 1px solid var(--bd);
+    font-weight: 500;
+    min-height: 44px;
+  }
+  #shop {
+    background: var(--card);
+    border: 2px solid var(--bd);
+    border-radius: 10px;
+    padding: 6px;
+    display: none;
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    max-height: 46%;
+    overflow: auto;
+    z-index: 6;
+    box-sizing: border-box;
+  }
+  #shop .row {
+    margin: 4px 0;
+  }
+  #shop button {
+    padding: 6px 8px;
+    font-size: 13px;
+    min-height: 36px;
+  }
+  #msg {
+    min-height: 22px;
+    font-size: 14px;
+    margin: 4px 0;
+  }
+  #pad {
+    display: grid;
+    grid-template-columns: repeat(3, 52px);
+    gap: 4px;
+    justify-content: center;
+    margin: 6px 0;
+  }
+  #pad button {
+    padding: 12px 0;
+  }
+  small {
+    opacity: .75;
+  }
+  #wrap {
+    position: relative;
+  }
+  #joy {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .22);
+    border: 2px solid rgba(255, 255, 255, .55);
+    touch-action: none;
+  }
+  #knob {
+    position: absolute;
+    left: 36px;
+    top: 36px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .7);
+    pointer-events: none;
+  }
+  #acts {
+    position: absolute;
+    right: 10px;
+    bottom: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, 60px);
+    gap: 8px;
+  }
+  #acts button {
+    width: 60px;
+    height: 60px;
+    padding: 0;
+    font-size: 26px;
+    border-radius: 50%;
+    opacity: .92;
+  }
+  #cams {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    display: flex;
+    gap: 8px;
+  }
+  #cams button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 20px;
+    opacity: .85;
+  }
+  @media (pointer: coarse) {
+    #pad {
+      display: none;
+    }
+  }
+  #cat {
+    display: none;
+    background: #555;
+    color: #fff;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 15px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+  @keyframes pulseWarn {
+    0%, 100% { background: #c0392b; transform: scale(1); }
+    50% { background: #e74c3c; transform: scale(1.01); }
+  }
+  .cat-alert {
+    animation: pulseWarn .85s infinite;
+    border: 2px solid #ffeb3b;
+  }
+  #toast {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -60%) scale(.95);
+    max-width: 84%;
+    padding: 12px 18px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, .8);
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.35;
+    opacity: 0;
+    transition: opacity .25s, transform .25s;
+    pointer-events: none;
+    z-index: 8;
+  }
+  /* 초기화 확인 모달 */
+  #resetModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 20;
+    align-items: center;
+    justify-content: center;
+  }
+  #resetBox {
+    background: var(--card);
+    color: var(--fg);
+    border: 2px solid var(--bd);
+    border-radius: 12px;
+    padding: 18px;
+    max-width: 300px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div id="top">
+  <span>⛺ 캠핑장비 모으기</span>
+  <span id="sc"></span>
+  <span>💰 <span id="money">0</span>원</span>
+</div>
+
+<!-- 고양이 출현 카운트다운 및 경고 배너 -->
+<div id="cat"></div>
+
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="shop">
+    <b>🏠 루비체리파파 상점</b> <small>(구매 · 판매)</small>
+    <button id="shopx" style="float:right">✕ 닫기</button>
+    <div class="row" id="shopItems"></div>
+    <div class="row" id="sellItems"></div>
+  </div>
+  <div id="toast"></div>
+  <div id="joy"><div id="knob"></div></div>
+  <div id="cams">
+    <button class="hold" data-k="q" title="카메라 왼쪽 회전">⟲</button>
+    <button class="hold" data-k="e" title="카메라 오른쪽 회전">⟳</button>
+    <button id="tshop" title="상점 열기">🛒</button>
+  </div>
+  <div id="acts">
+    <button id="tdig" title="땅파기">⛏️</button>
+    <button id="thit" title="나무치기">🔨</button>
+    <button id="tfire" title="불 피우기">🔥</button>
+    <button id="tpick" title="회수">📦</button>
+  </div>
+</div>
+
+<div id="msg">📱 왼쪽 조이스틱 이동 · 화면 드래그로 카메라 · 오른쪽 버튼 ⛏️땅파기 🔨나무 🔥불 📦회수 (PC: WASD · Q/E · Z · X · F · R)</div>
+
+<div class="row">
+  <button id="bd">⛏️ 땅파기 (Z)</button>
+  <button id="bh">🔨 나무치기 (X)</button>
+  <button id="bf">🔥 불 피우기 (F)</button>
+  <button id="bp">📦 회수 (R)</button>
+  <button id="bs">❄️ 눈</button>
+  <button class="hold" data-k="q">⟲</button>
+  <button class="hold" data-k="e">⟳</button>
+  <button id="br">🗑️ 초기화</button>
+</div>
+
+<div>
+  <b>🎒 인벤토리</b>
+  <small>눌러서 설치(🏮 랜턴은 머리에 착용) · ⛺ 텐트는 캠핑 구역(A/B/C)에서만, 땅 대여료 10원 · 🔥 불은 스트링끈 1개 사용</small>
+</div>
+<div class="row" id="inv"></div>
+
+<div id="pad">
+  <span></span><button data-k="u">▲</button><span></span>
+  <button data-k="l">◀</button><button data-k="d">▼</button><button data-k="r">▶</button>
+</div>
+
+<!-- 커스텀 초기화 확인 대화상자 -->
+<div id="resetModal">
+  <div id="resetBox">
+    <p style="font-weight:700;margin-top:0">진행 상황을 모두 지우고 새로 시작할까요?</p>
+    <div class="row" style="justify-content:center;margin-bottom:0">
+      <button id="resetYes" style="background:#c0392b">초기화</button>
+      <button id="resetNo" class="chip">취소</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// 아이템 아이콘 및 확률/가격 설정
+const IC = {'팩':'📌','화로대':'🔥','스트링끈':'🧵','선글라스':'🕶️','컵':'☕','금화':'🪙','식기류':'🍴','텐트':'⛺','의자':'🪑','테이블':'🍽️','랜턴':'🏮','담요':'🧣','그릴':'🍖','해먹':'🌴'};
+const DIG = [['팩',50],['스트링끈',35],['화로대',15]];
+const TREE = [['선글라스',20],['컵',30],['금화',20],['식기류',30]];
+const SHOP = {'텐트':30,'의자':8,'테이블':15,'랜턴':10,'화로대':20,'담요':12,'그릴':18,'해먹':25};
+const SELL = {'선글라스':5,'컵':3,'금화':8,'식기류':3,'팩':1,'스트링끈':1};
+const NEED = ['텐트','화로대','의자','테이블','랜턴'];
+const RENT = 10;
+
+// 고양이 출현 빈도: 3분 (180초)
+const CAT_INTERVAL = 180;
+
+const S = {money:0, inv:{}, placed:[], done:false, lamp:false};
+const P = {x:-24, z:18};
+let T = 30, snow = false, camA = 0, night = 0, wasNight = false;
+let catAt = null, cats = [], catDone = false;
+
+// Three.js 씬 및 렌더러 초기화
+const cv = document.getElementById('c');
+const R = new THREE.WebGLRenderer({canvas:cv, antialias:true});
+const sc = new THREE.Scene();
+const sky = new THREE.Color(0x9fd3f0);
+sc.background = sky.clone();
+sc.fog = new THREE.Fog(0x9fd3f0, 45, 95);
+
+const cam = new THREE.PerspectiveCamera(55, 1, .1, 200);
+const hemi = new THREE.HemisphereLight(0xffffff, 0x557744, .9);
+sc.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, .7);
+sun.position.set(20, 40, 10);
+sc.add(sun);
+
+// 사운드 효과 (Web Audio API)
+let AC;
+function beep(f, d, ty) {
+  try {
+    AC = AC || new AudioContext();
+    const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime;
+    o.type = ty || 'sine';
+    o.frequency.value = f;
+    g.gain.setValueAtTime(.08, t);
+    g.gain.exponentialRampToValueAtTime(.001, t + (d || .12));
+    o.connect(g);
+    g.connect(AC.destination);
+    o.start();
+    o.stop(t + (d || .12));
+  } catch (e) {}
+}
+
+// 3D 기본 도형 및 텍스트 스프라이트 헬퍼
+function M(geo, col) { return new THREE.Mesh(geo, new THREE.MeshLambertMaterial({color:col})); }
+function box(w, h, d, c) { return M(new THREE.BoxGeometry(w, h, d), c); }
+function label(t, s) {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 64;
+  const x = c.getContext('2d');
+  x.fillStyle = 'rgba(0,0,0,.6)';
+  x.fillRect(0, 0, 256, 64);
+  x.fillStyle = '#fff';
+  x.font = 'bold 28px sans-serif';
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.fillText(t, 128, 34);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c)}));
+  sp.scale.set(s, s / 4, 1);
+  return sp;
+}
+
+// 지면 및 상점(산장) 생성
+const gr = M(new THREE.PlaneGeometry(90, 70), 0x7fbf5a);
+gr.rotation.x = -Math.PI / 2;
+sc.add(gr);
+
+const SH = {x:0, z:-6}, sh = new THREE.Group();
+const sb = box(7, 3.2, 5, 0x9a6b3f); sb.position.y = 1.6; sh.add(sb);
+const sr = M(new THREE.ConeGeometry(5.6, 2.4, 4), 0x6b3a22); sr.rotation.y = Math.PI / 4; sr.position.y = 4.4; sh.add(sr);
+const sd = box(1.2, 2, .2, 0x4a2b16); sd.position.set(0, 1, 2.55); sh.add(sd);
+
+const sgc = document.createElement('canvas'); sgc.width = 512; sgc.height = 128;
+const sx = sgc.getContext('2d');
+sx.fillStyle = '#7a4a24'; sx.fillRect(0, 0, 512, 128);
+sx.strokeStyle = '#e8c98a'; sx.lineWidth = 8; sx.strokeRect(8, 8, 496, 112);
+sx.fillStyle = '#ffe9b0'; sx.font = 'bold 52px sans-serif'; sx.textAlign = 'center'; sx.textBaseline = 'middle';
+sx.fillText('루비체리파파 상점', 256, 68);
+const sl = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(sgc)}));
+sl.scale.set(8, 2, 1); sl.position.y = 7.4; sh.add(sl);
+sh.position.set(SH.x, 0, SH.z); sc.add(sh);
+
+// 나무 배치
+const trees = [[-30,-20],[-18,-8],[-8,-24],[10,-25],[28,-24],[30,22],[2,24],[-12,10],[-33,4],[14,-12]].map(([x, z]) => {
+  const g = new THREE.Group(), t = M(new THREE.CylinderGeometry(.5, .7, 3, 8), 0x6b4a2b);
+  t.position.y = 1.5; g.add(t);
+  const a = M(new THREE.ConeGeometry(2.6, 4, 8), 0x2f7d3a); a.position.y = 5; g.add(a);
+  const b = M(new THREE.ConeGeometry(2, 3.2, 8), 0x3a9246); b.position.y = 7.2; g.add(b);
+  g.position.set(x, 0, z); sc.add(g);
+  return {x, z, cd:0, g};
+});
+
+// 캠핑 구역 (A, B, C)
+const spots = [['A', -10], ['B', 0], ['C', 10]].map(([n, z]) => {
+  const g = new THREE.Group(), p = box(8, .15, 8, 0xd8c690);
+  p.position.y = .08; g.add(p);
+  [[-4,-4],[4,-4],[-4,4],[4,4]].forEach(([x, zz]) => {
+    const q = box(.3, 1.2, .3, 0xffffff); q.position.set(x, .6, zz); g.add(q);
+  });
+  g.position.set(24, 0, z);
+  const l = label('캠핑 ' + n + ' · 대여 ' + RENT + '원', 5);
+  l.position.set(0, 3.2, 0); g.add(l); sc.add(g);
+  return {n, x:24, z, used:false, g, l};
+});
+
+// 플레이어 캐릭터
+const pl = new THREE.Group();
+const pb = M(new THREE.CylinderGeometry(.5, .5, 1.4, 10), 0x2f6fd0); pb.position.y = .9; pl.add(pb);
+const ph = M(new THREE.SphereGeometry(.45, 10, 8), 0xf2c9a0); ph.position.y = 2; pl.add(ph);
+const pn = box(.15, .15, .7, 0xffffff); pn.position.set(0, 2, .5); pl.add(pn);
+
+// 머리 착용 랜턴
+const hl = new THREE.Group();
+const hb = M(new THREE.SphereGeometry(.2, 10, 8), 0xffe066); hb.position.set(0, 2.25, .45); hl.add(hb);
+const hs = box(1, .12, 1, 0x333333); hs.position.set(0, 2.3, 0); hl.add(hs);
+const hlt = new THREE.PointLight(0xffe9a8, 0, 18); hlt.position.set(0, 2.4, .7); hl.add(hlt);
+hl.visible = false; pl.add(hl);
+
+const legs = [-.2, .2].map(x => {
+  const l = box(.3, .8, .3, 0x223355);
+  l.geometry.translate(0, -.4, 0);
+  l.position.set(x, .8, 0);
+  pl.add(l);
+  return l;
+});
+sc.add(pl);
+
+// 눈 파티클
+const sn = new THREE.BufferGeometry(), sp = new Float32Array(1500);
+for (let i = 0; i < 1500; i += 3) {
+  sp[i] = Math.random() * 60 - 30;
+  sp[i + 1] = Math.random() * 22;
+  sp[i + 2] = Math.random() * 60 - 30;
+}
+sn.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+const snowP = new THREE.Points(sn, new THREE.PointsMaterial({color:0xffffff, size:.28}));
+snowP.visible = false; sc.add(snowP);
+
+const holes = [], lamps = [], fires = [];
+
+// 유틸리티 및 메시지 알림
+function roll(t) {
+  let r = Math.random() * 100, a = 0;
+  for (const [n, w] of t) { a += w; if (r < a) return n; }
+  return t[0][0];
+}
+
+let tt;
+function say(t, dur, isWarn) {
+  document.getElementById('msg').textContent = t;
+  const e = document.getElementById('toast');
+  e.textContent = t;
+  e.style.background = isWarn ? 'rgba(192, 57, 43, .92)' : 'rgba(0, 0, 0, .8)';
+  e.style.opacity = 1;
+  e.style.transform = 'translate(-50%,-50%) scale(1)';
+  clearTimeout(tt);
+  tt = setTimeout(() => {
+    e.style.opacity = 0;
+    e.style.transform = 'translate(-50%,-60%) scale(.95)';
+  }, dur || 2600);
+}
+
+// 2D 거리 계산 함수
+function d(a, b) {
+  return Math.hypot(a.x - b.x, a.z - b.z);
+}
+
+function add(n) {
+  S.inv[n] = (S.inv[n] || 0) + 1;
+  S.money++;
+  beep(660, .1);
+  try { navigator.vibrate && navigator.vibrate(25); } catch (e) {}
+}
+
+function mkHole(x, z) {
+  const h = M(new THREE.CircleGeometry(.9, 16), 0x5a3b20);
+  h.rotation.x = -Math.PI / 2;
+  h.position.set(x, .03, z);
+  sc.add(h);
+  holes.push({x, z, m:h, t:Date.now()});
+}
+
+// 땅파기 액션
+function dig() {
+  if (d(P, SH) < 7) return say('산장 근처에서는 땅을 팔 수 없어요');
+  if (spots.some(s => Math.abs(s.x - P.x) < 4.2 && Math.abs(s.z - P.z) < 4.2)) return say('캠핑 구역 바닥은 팔 수 없어요');
+  if (holes.some(h => d(h, P) < 1.6)) return say('이미 판 자리예요. 조금 옮겨서 파세요');
+  mkHole(P.x, P.z);
+  beep(180, .15, 'square');
+  const n = roll(DIG);
+  add(n);
+  say('⛏️ 땅에서 ' + IC[n] + n + ' 발견! +1원');
+  ui();
+}
+
+// 나무치기 액션
+function hit() {
+  const t = trees.find(t => d(t, P) < 4.5);
+  if (!t) return say('나무 가까이에서 망치를 휘두르세요 🌲');
+  if (t.cd > 0) return say('이 나무는 아직 흔들리는 중... 잠시 후 다시!');
+  t.cd = 2.5;
+  beep(120, .2, 'sawtooth');
+  if (Math.random() < 1 / 30) {
+    S.inv['금화'] = (S.inv['금화'] || 0) + 1;
+    S.money += 10;
+    beep(990, .35);
+    try { navigator.vibrate && navigator.vibrate([40, 40, 80]); } catch (e) {}
+    say('🪙✨ 금화 대박! +10원');
+    ui();
+    return;
+  }
+  const n = roll(TREE);
+  add(n);
+  say('🔨 나무에서 ' + IC[n] + n + ' 떨어졌다! +1원');
+  ui();
+}
+
+// 캠핑 장비 3D 메시 생성
+function mesh(n) {
+  const g = new THREE.Group();
+  if (n === '텐트') { const t = M(new THREE.ConeGeometry(3.2, 3, 4), 0xf08a2c); t.rotation.y = Math.PI / 4; t.position.y = 1.5; g.add(t); }
+  else if (n === '화로대') { const b = M(new THREE.CylinderGeometry(.9, .6, .6, 10), 0x333333); b.position.y = .5; g.add(b); }
+  else if (n === '의자') { const s = box(1, .2, 1, 0x2f6fd0); s.position.y = .7; g.add(s); const b = box(1, 1, .15, 0x2f6fd0); b.position.set(0, 1.2, -.45); g.add(b); const l = box(.9, .7, .9, 0x555555); l.position.y = .35; g.add(l); }
+  else if (n === '테이블') { const t = box(2.4, .2, 1.4, 0xb98a52); t.position.y = 1.1; g.add(t); const l = box(.2, 1, 1.2, 0x555555); l.position.y = .55; g.add(l); }
+  else if (n === '랜턴') { const p = M(new THREE.CylinderGeometry(.08, .08, 1.6, 6), 0x444444); p.position.y = .8; g.add(p); const b = M(new THREE.SphereGeometry(.35, 10, 8), 0xffe066); b.position.y = 1.7; g.add(b); }
+  else if (n === '컵') { const c = M(new THREE.CylinderGeometry(.35, .3, .6, 12), 0xb8bcc2); c.position.y = .3; g.add(c); const h = M(new THREE.TorusGeometry(.2, .05, 6, 10), 0xb8bcc2); h.position.set(.4, .3, 0); g.add(h); }
+  else if (n === '선글라스') { [-.4, .4].forEach((x, i) => { const l = M(new THREE.CylinderGeometry(.35, .35, .08, 12), i ? 0xff3d9a : 0x20c997); l.rotation.x = Math.PI / 2; l.position.set(x, .5, 0); g.add(l); }); const b = box(.3, .06, .06, 0x111111); b.position.y = .55; g.add(b); }
+  else if (n === '금화') { const c = M(new THREE.CylinderGeometry(.4, .4, .08, 16), 0xffc400); c.position.y = .06; g.add(c); }
+  else if (n === '식기류') { const p = M(new THREE.CylinderGeometry(.55, .5, .06, 16), 0xf4f4f4); p.position.y = .05; g.add(p); const f = box(.08, .04, .8, 0x999999); f.position.set(.9, .05, 0); g.add(f); }
+  else if (n === '담요') { const b = box(2, .1, 1.4, 0xc0392b); b.position.y = .06; g.add(b); }
+  else if (n === '그릴') { const b = box(1.6, .5, 1, 0x222222); b.position.y = 1.1; g.add(b); const l = box(1.2, .8, .6, 0x444444); l.position.y = .4; g.add(l); }
+  else if (n === '해먹') { [-1.8, 1.8].forEach(x => { const p = box(.2, 2, .2, 0x6b4a2b); p.position.set(x, 1, 0); g.add(p); }); const h = box(3.4, .15, .9, 0x2a9d8f); h.position.y = 1.1; g.add(h); }
+  else { const b = M(new THREE.SphereGeometry(.3, 8, 6), 0xcccc55); b.position.y = .3; g.add(b); }
+  return g;
+}
+
+// 점수 및 목표 달성 체크
+function score() {
+  const W = {'텐트':20,'화로대':10,'의자':5,'테이블':5,'랜턴':5,'담요':4,'그릴':8,'해먹':10,'컵':3,'식기류':3,'선글라스':3,'금화':2};
+  let s = 0;
+  if (S.lamp) s += 5;
+  S.placed.forEach(p => {
+    s += W[p.n] || 1;
+    if (p.lit) s += 15;
+    if (p.n === '의자' && S.placed.some(f => f.n === '화로대' && f.lit && Math.hypot(f.x - p.x, f.z - p.z) < 6)) s += 10;
+  });
+  return s;
+}
+
+function checkDone() {
+  if (!S.done && NEED.every(k => (k === '랜턴' && S.lamp) || S.placed.some(p => p.n === k)) && S.placed.some(p => p.lit)) {
+    S.done = true;
+    say('🎉 캠핑 완성! 필수 장비를 모두 설치하고 불까지 피웠어요. 점수 ' + score() + '점');
+  }
+}
+
+function light(p) {
+  const f = M(new THREE.ConeGeometry(.5, 1.3, 8), 0xff6a1a); f.position.y = 1.3; p.g.add(f);
+  const l = new THREE.PointLight(0xff8833, 1.8, 16); l.position.y = 2; p.g.add(l);
+  fires.push({f, l, p});
+}
+
+function put(n, x, z, rot, lit) {
+  const g = mesh(n);
+  g.position.set(x, 0, z);
+  g.rotation.y = rot || 0;
+  sc.add(g);
+  const p = {n, x, z, rot:rot || 0, lit:!!lit, g};
+  S.placed.push(p);
+  if (n === '랜턴') {
+    const l = new THREE.PointLight(0xffd966, 0, 14);
+    l.position.y = 1.7;
+    g.add(l);
+    lamps.push(l);
+  }
+  if (n === '화로대' && lit) light(p);
+  return p;
+}
+
+function useSpot(s) {
+  s.used = true;
+  s.g.remove(s.l);
+  s.l = label('캠핑 ' + s.n + ' · 사용중', 5);
+  s.l.position.set(0, 5.2, 0);
+  s.g.add(s.l);
+}
+
+// 아이템 설치
+function place(n) {
+  if (n === '랜턴' && S.inv[n]) {
+    S.inv[n]--;
+    S.lamp = true;
+    beep(700, .15);
+    say('🏮 랜턴을 머리에 썼어요! 밤에 주변을 밝혀줘요');
+    checkDone();
+    ui();
+    return;
+  }
+  if (!S.inv[n]) return;
+  if (n === '텐트') {
+    const s = spots.filter(s => !s.used).sort((a, b) => d(a, P) - d(b, P))[0];
+    if (!s) return say('캠핑 구역이 모두 찼어요');
+    if (d(s, P) > 7) return say('텐트는 캠핑 구역(A·B·C)에서만 칠 수 있어요. 동쪽 흰 말뚝 구역으로 가세요!');
+    if (S.money < RENT) return say('땅 대여료 ' + RENT + '원이 부족해요 (보유 ' + S.money + '원)');
+    S.money -= RENT;
+    S.inv[n]--;
+    put(n, s.x, s.z, 0);
+    useSpot(s);
+    beep(520, .25);
+    checkDone();
+    say('⛺ 캠핑 ' + s.n + ' 구역에 텐트 설치! 대여료 ' + RENT + '원 지불 (3분 후 고양이 출현 주의!)');
+    ui();
+    return;
+  }
+  if (d(P, SH) < 7) return say('산장 앞에는 설치할 수 없어요');
+  S.inv[n]--;
+  put(n, P.x + Math.sin(pl.rotation.y) * 2, P.z + Math.cos(pl.rotation.y) * 2, pl.rotation.y);
+  beep(400, .12);
+  say(IC[n] + n + ' 설치!' + (n === '화로대' ? ' 가까이서 불 피우기(F)를 눌러보세요' : ''));
+  checkDone();
+  ui();
+}
+
+// 불 피우기
+function ignite() {
+  const f = S.placed.filter(p => p.n === '화로대' && !p.lit).sort((a, b) => d(a, P) - d(b, P))[0];
+  if (!f || d(f, P) > 5) return say('불을 피울 화로대 가까이로 가세요');
+  if (!S.inv['스트링끈']) return say('불쏘시개로 쓸 🧵스트링끈이 필요해요 (땅을 파면 나와요)');
+  S.inv['스트링끈']--;
+  f.lit = true;
+  light(f);
+  beep(300, .4, 'sawtooth');
+  say('🔥 불을 피웠어요! 의자를 불 가까이 두면 보너스 점수');
+  checkDone();
+  ui();
+}
+
+// 고양이 모델 및 출현/경고 로직 (귀여운 디자인 & 다채로운 털색)
+function mkCat(idx) {
+  const coats = [
+    { body: 0xf4a261, sub: 0xfff3e0, name: '치즈냥' },
+    { body: 0xfff8e7, sub: 0xf4a261, name: '크림냥' },
+    { body: 0x3d405b, sub: 0xffffff, name: '턱시도냥' },
+    { body: 0x9e9e9e, sub: 0xf5f5f5, name: '고등어냥' }
+  ];
+  const coat = coats[(idx + Math.floor(Math.random() * coats.length)) % coats.length];
+  const g = new THREE.Group();
+
+  // 포동포동하고 둥근 몸통 & 하얀 가슴털
+  const b = M(new THREE.SphereGeometry(1, 16, 14), coat.body);
+  b.scale.set(.92, .82, 1.25);
+  b.position.y = .95;
+  g.add(b);
+
+  const chest = M(new THREE.SphereGeometry(.68, 12, 10), coat.sub);
+  chest.position.set(0, .95, .72);
+  g.add(chest);
+
+  // 크고 동그란 머리
+  const head = new THREE.Group();
+  head.position.set(0, 1.65, 1.15);
+  const h = M(new THREE.SphereGeometry(.76, 16, 14), coat.body);
+  h.scale.set(1.08, .96, .98);
+  head.add(h);
+
+  // 쫑긋한 귀 & 분홍색 귓속
+  [-.42, .42].forEach((x, side) => {
+    const ear = M(new THREE.ConeGeometry(.27, .48, 12), coat.body);
+    ear.position.set(x, .68, 0);
+    ear.rotation.z = side ? -.25 : .25;
+    head.add(ear);
+
+    const inner = M(new THREE.ConeGeometry(.15, .32, 10), 0xff9ebb);
+    inner.position.set(x, .65, .07);
+    inner.rotation.z = side ? -.25 : .25;
+    head.add(inner);
+  });
+
+  // 크고 초롱초롱한 눈 + 흰색 하이라이트
+  [-.27, .27].forEach(x => {
+    const eye = M(new THREE.SphereGeometry(.14, 12, 10), 0x1b1b1b);
+    eye.position.set(x, .08, .66);
+    head.add(eye);
+
+    const shine = M(new THREE.SphereGeometry(.055, 8, 8), 0xffffff);
+    shine.position.set(x + .04, .13, .77);
+    head.add(shine);
+  });
+
+  // 앙증맞은 분홍 코 & 통통한 볼살(주둥이)
+  const nose = M(new THREE.SphereGeometry(.085, 10, 8), 0xff7597);
+  nose.scale.set(1.2, .85, .8);
+  nose.position.set(0, -.06, .75);
+  head.add(nose);
+
+  [-.11, .11].forEach(x => {
+    const cheek = M(new THREE.SphereGeometry(.14, 10, 8), coat.sub);
+    cheek.position.set(x, -.14, .69);
+    head.add(cheek);
+  });
+
+  // 양볼 수염
+  [-1, 1].forEach(dir => {
+    [-.06, -.15].forEach((y, i) => {
+      const w = box(.38, .022, .022, 0xffffff);
+      w.position.set(dir * .46, y, .64);
+      w.rotation.z = dir * (i ? -.12 : .08);
+      head.add(w);
+    });
+  });
+  g.add(head);
+
+  // 살랑살랑 흔드는 둥근 꼬리
+  const tail = new THREE.Group();
+  tail.position.set(0, 1.15, -1.1);
+  const t1 = M(new THREE.CylinderGeometry(.13, .16, 1.1, 10), coat.body);
+  t1.rotation.x = -.75;
+  t1.position.set(0, .38, -.35);
+  tail.add(t1);
+  const tTip = M(new THREE.SphereGeometry(.16, 10, 8), coat.sub);
+  tTip.position.set(0, .78, -.72);
+  tail.add(tTip);
+  g.add(tail);
+
+  // 하얀 양말을 신은 짧은 4개 다리
+  const paws = [];
+  [-.42, .42].forEach(x => [-.65, .75].forEach(z => {
+    const leg = new THREE.Group();
+    leg.position.set(x, .45, z);
+    const l = M(new THREE.CylinderGeometry(.17, .18, .48, 10), coat.body);
+    l.position.y = -.15;
+    leg.add(l);
+    const sock = M(new THREE.SphereGeometry(.19, 10, 8), 0xffffff);
+    sock.scale.set(1, .75, 1.15);
+    sock.position.set(0, -.36, .04);
+    leg.add(sock);
+    g.add(leg);
+    paws.push(leg);
+  }));
+
+  const lb = label('🐱 ' + coat.name + '!', 4);
+  lb.position.y = 3.1;
+  g.add(lb);
+  g.scale.setScalar(1.2);
+  return { g, head, tail, paws };
+}
+
+function spawnCat() {
+  const tents = S.placed.filter(p => p.n === '텐트');
+  if (!tents.length) { catAt = null; return; }
+
+  // 최소 1마리 ~ 최대 3마리 랜덤 출현
+  const count = 1 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
+    const tent = tents[Math.floor(Math.random() * tents.length)];
+    const model = mkCat(i);
+    const startZ = Math.max(-26, Math.min(26, (Math.random() * 44 - 22) + (i - 1) * 5));
+    model.g.position.set(-42 - i * 2.5, 0, startZ);
+    sc.add(model.g);
+    cats.push({
+      g: model.g,
+      head: model.head,
+      tail: model.tail,
+      paws: model.paws,
+      tent,
+      speed: 3.2 + Math.random() * 0.8,
+      phase: Math.random() * 6.28,
+      pt: 0,
+      n: 0
+    });
+  }
+
+  // 경고음 및 진동
+  beep(880, .2, 'square');
+  setTimeout(() => beep(880, .2, 'square'), 250);
+  setTimeout(() => beep(880, .3, 'square'), 500);
+  try { navigator.vibrate && navigator.vibrate([200, 100, 200, 100, 300]); } catch (e) {}
+
+  // 상단 점멸 경고 배너 + 중앙 토스트 경고문
+  const el = document.getElementById('cat');
+  el.style.background = '#c0392b';
+  el.classList.add('cat-alert');
+  say('🚨 경고! 고양이 ' + count + '마리가 나타났습니다! 지금 즉시 텐트를 회수하세요!', 4500, true);
+}
+
+function clearCats(msg) {
+  cats.forEach(c => sc.remove(c.g));
+  cats = [];
+  catAt = null;
+  catDone = true;
+  document.getElementById('cat').classList.remove('cat-alert');
+  if (msg) say(msg);
+  ui();
+}
+
+function ruin(p) {
+  if (!S.placed.includes(p)) return;
+  sc.remove(p.g);
+  S.placed.splice(S.placed.indexOf(p), 1);
+  const s = spots.find(s => s.x === p.x && s.z === p.z);
+  if (s) {
+    s.used = false;
+    s.g.remove(s.l);
+    s.l = label('캠핑 ' + s.n + ' · 대여 ' + RENT + '원', 5);
+    s.l.position.set(0, 3.2, 0);
+    s.g.add(s.l);
+  }
+  beep(200, .5, 'sawtooth');
+  const remTents = S.placed.filter(item => item.n === '텐트');
+  if (!remTents.length) {
+    clearCats('😿 냥냥펀치 5번에 텐트가 파손됐어요! 텐트를 모두 잃었어요');
+  } else {
+    say('😿 텐트 1개가 파손됐어요! 남은 텐트를 서둘러 회수하세요!', 3000, true);
+    ui();
+  }
+}
+
+// 아이템 회수
+function pickup() {
+  const p = S.placed.slice().sort((a, b) => d(a, P) - d(b, P))[0];
+  if (!p || d(p, P) > 5) return say('회수할 아이템 가까이로 가세요');
+  sc.remove(p.g);
+  S.placed.splice(S.placed.indexOf(p), 1);
+  const fi = fires.findIndex(f => f.p === p);
+  if (fi >= 0) fires.splice(fi, 1);
+  p.g.children.forEach(c => {
+    const li = lamps.indexOf(c);
+    if (li >= 0) lamps.splice(li, 1);
+  });
+  if (p.n === '텐트') {
+    const s = spots.find(s => s.x === p.x && s.z === p.z);
+    if (s) {
+      s.used = false;
+      s.g.remove(s.l);
+      s.l = label('캠핑 ' + s.n + ' · 대여 ' + RENT + '원', 5);
+      s.l.position.set(0, 3.2, 0);
+      s.g.add(s.l);
+    }
+  }
+  S.inv[p.n] = (S.inv[p.n] || 0) + 1;
+  beep(500, .12);
+  say(IC[p.n] + p.n + ' 회수!' + (p.n === '텐트' ? ' (땅 대여료는 환불되지 않아요)' : '') + (p.lit ? ' (불은 꺼져요)' : ''));
+  ui();
+}
+
+// 상점 구매 및 판매
+function buy(n) {
+  const p = SHOP[n];
+  if (S.money < p) return say('돈이 부족해요 (' + p + '원 필요)');
+  S.money -= p;
+  S.inv[n] = (S.inv[n] || 0) + 1;
+  beep(780, .15);
+  say(IC[n] + n + ' 구매!' + (n === '텐트' ? ' 동쪽 캠핑 구역에서 설치하세요 (대여료 ' + RENT + '원)' : ''));
+  ui();
+}
+
+function sell(n) {
+  if (!S.inv[n]) return;
+  S.inv[n]--;
+  S.money += SELL[n];
+  beep(880, .15);
+  say(IC[n] + n + ' 판매 +' + SELL[n] + '원');
+  ui();
+}
+
+// 로컬 스토리지 저장 및 불러오기
+function save() {
+  try {
+    localStorage.setItem('camp3d', JSON.stringify({
+      m: S.money, i: S.inv, p: S.placed.map(({n, x, z, rot, lit}) => ({n, x, z, rot, lit})),
+      h: [], x: P.x, z: P.z, T, d: S.done, l: S.lamp, c: catDone
+    }));
+  } catch (e) {}
+}
+
+function load() {
+  try {
+    const j = JSON.parse(localStorage.getItem('camp3d') || 'null');
+    if (!j) return;
+    S.money = j.m || 0;
+    S.inv = j.i || {};
+    S.done = !!j.d;
+    S.lamp = !!j.l;
+    catDone = !!j.c;
+    P.x = j.x;
+    P.z = j.z;
+    T = j.T || 30;
+    (j.p || []).forEach(p => {
+      put(p.n, p.x, p.z, p.rot, p.lit);
+      const s = p.n === '텐트' && spots.find(s => s.x === p.x && s.z === p.z);
+      if (s) useSpot(s);
+    });
+    say('이전 진행 상황을 불러왔어요');
+  } catch (e) {}
+}
+
+// UI 업데이트
+let built = false, shopHide = false;
+function ui() {
+  document.getElementById('money').textContent = S.money;
+  document.getElementById('sc').textContent = (night > .5 ? '🌙 밤' : '☀️ 낮') + ' · 캠핑 점수 ' + score();
+  const inv = document.getElementById('inv');
+  inv.innerHTML = '';
+  const ks = Object.keys(S.inv).filter(k => S.inv[k] > 0);
+  if (!ks.length && !S.lamp) inv.innerHTML = '<small>비어 있어요. 땅을 파거나 나무를 쳐보세요!</small>';
+  ks.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = IC[k] + ' ' + k + ' ×' + S.inv[k];
+    b.onclick = () => place(k);
+    inv.appendChild(b);
+  });
+  if (S.lamp) {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = '🏮 랜턴 착용중 (벗기)';
+    b.onclick = () => {
+      S.lamp = false;
+      S.inv['랜턴'] = (S.inv['랜턴'] || 0) + 1;
+      say('🏮 랜턴을 벗었어요');
+      ui();
+    };
+    inv.appendChild(b);
+  }
+  const open = d(P, SH) < 9 && !shopHide;
+  document.getElementById('shop').style.display = open ? 'block' : 'none';
+  if (open && !built) {
+    built = true;
+    const si = document.getElementById('shopItems');
+    for (const n in SHOP) {
+      const b = document.createElement('button');
+      b.textContent = '구매 ' + IC[n] + ' ' + n + ' ' + SHOP[n] + '원';
+      b.onclick = () => buy(n);
+      si.appendChild(b);
+    }
+  }
+  const se = document.getElementById('sellItems');
+  se.innerHTML = '';
+  for (const n in SELL) {
+    if (S.inv[n] > 0) {
+      const b = document.createElement('button');
+      b.className = 'chip';
+      b.textContent = '판매 ' + IC[n] + ' ' + n + ' ×' + S.inv[n] + ' +' + SELL[n] + '원';
+      b.onclick = () => sell(n);
+      se.appendChild(b);
+    }
+  }
+  save();
+}
+
+// 버튼 및 키보드/터치 이벤트 연결
+document.getElementById('bd').onclick = dig;
+document.getElementById('bh').onclick = hit;
+document.getElementById('bf').onclick = ignite;
+document.getElementById('bp').onclick = pickup;
+document.getElementById('shopx').onclick = () => { shopHide = true; ui(); };
+document.getElementById('tshop').onclick = () => {
+  if (d(P, SH) >= 9) say('산장 근처에서 상점을 열 수 있어요');
+  else { shopHide = false; ui(); }
+};
+document.getElementById('bs').onclick = () => {
+  snow = !snow;
+  snowP.visible = snow;
+  gr.material.color.set(snow ? 0xe8f0f5 : 0x7fbf5a);
+  say(snow ? '❄️ 눈이 내려요' : '눈이 그쳤어요');
+};
+
+// 커스텀 초기화 모달 동작
+const resetModal = document.getElementById('resetModal');
+document.getElementById('br').onclick = () => { resetModal.style.display = 'flex'; };
+document.getElementById('resetNo').onclick = () => { resetModal.style.display = 'none'; };
+document.getElementById('resetYes').onclick = () => {
+  try { localStorage.removeItem('camp3d'); } catch (e) {}
+  location.reload();
+};
+
+const K = {};
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  K[k] = 1;
+  if (k === 'z') dig();
+  if (k === 'x') hit();
+  if (k === 'f') ignite();
+  if (k === 'r') pickup();
+  if (k.startsWith('arrow')) e.preventDefault();
+});
+addEventListener('keyup', e => K[e.key.toLowerCase()] = 0);
+
+document.querySelectorAll('#pad button,.hold').forEach(b => {
+  const k = b.dataset.k;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); K['p' + k] = 1; });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => K['p' + k] = 0));
+});
+
+// 가상 조이스틱 및 화면 드래그 카메라 회전
+const J = {x:0, z:0}, joy = document.getElementById('joy'), knob = document.getElementById('knob');
+let jid = null, cid = null, cx0 = 0;
+
+function jset(e) {
+  const r = joy.getBoundingClientRect(), m0 = r.width / 2 - 10;
+  let x = e.clientX - (r.left + r.width / 2), y = e.clientY - (r.top + r.height / 2);
+  const m = Math.hypot(x, y);
+  if (m > m0) { x = x / m * m0; y = y / m * m0; }
+  knob.style.left = (36 + x) + 'px';
+  knob.style.top = (36 + y) + 'px';
+  J.x = x / m0;
+  J.z = y / m0;
+}
+
+joy.addEventListener('pointerdown', e => { e.preventDefault(); jid = e.pointerId; joy.setPointerCapture(jid); jset(e); });
+joy.addEventListener('pointermove', e => { if (e.pointerId === jid) jset(e); });
+const jend = e => { if (e.pointerId !== jid) return; jid = null; J.x = J.z = 0; knob.style.left = '36px'; knob.style.top = '36px'; };
+joy.addEventListener('pointerup', jend);
+joy.addEventListener('pointercancel', jend);
+
+cv.addEventListener('pointerdown', e => { cid = e.pointerId; cx0 = e.clientX; cv.setPointerCapture(cid); });
+cv.addEventListener('pointermove', e => { if (e.pointerId === cid) { camA += (e.clientX - cx0) * .012; cx0 = e.clientX; } });
+const cend = e => { if (e.pointerId === cid) cid = null; };
+cv.addEventListener('pointerup', cend);
+cv.addEventListener('pointercancel', cend);
+
+[['tdig', dig], ['thit', hit], ['tfire', ignite], ['tpick', pickup]].forEach(([id, f]) => {
+  document.getElementById(id).addEventListener('pointerdown', e => { e.preventDefault(); f(); });
+});
+
+function resize() {
+  const w = cv.clientWidth, h = cv.clientHeight;
+  R.setSize(w, h, false);
+  cam.aspect = w / h;
+  cam.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+// 메인 게임 루프
+const DAY = new THREE.Color(0x9fd3f0), NIT = new THREE.Color(0x0b1430);
+let last = performance.now(), wasOpen = false;
+
+function loop(t) {
+  const dt = Math.min(.05, (t - last) / 1000);
+  last = t;
+  T += dt;
+
+  // 낮/밤 전환
+  const a = T / 120 * Math.PI * 2, sh_ = Math.sin(a);
+  night = Math.min(1, Math.max(0, .5 - sh_ * 1.5));
+  sky.lerpColors(DAY, NIT, night);
+  sc.background.copy(sky);
+  sc.fog.color.copy(sky);
+  hemi.intensity = .9 - .65 * night;
+  sun.intensity = .7 * (1 - night);
+  lamps.forEach(l => l.intensity = night * 1.6);
+  hl.visible = S.lamp;
+  hlt.intensity = S.lamp ? .7 + night * 2.2 : 0;
+  if ((night > .5) !== wasNight) { wasNight = night > .5; ui(); }
+
+  // 이동 및 카메라 조작
+  const jx = Math.abs(J.x) > .15 ? J.x : 0, jz = Math.abs(J.z) > .15 ? J.z : 0;
+  const rx = (K.d || K.arrowright || K.pr ? 1 : 0) - (K.a || K.arrowleft || K.pl ? 1 : 0) + jx;
+  const rz = (K.s || K.arrowdown || K.pd ? 1 : 0) - (K.w || K.arrowup || K.pu ? 1 : 0) + jz;
+  camA += ((K.e || K.pe ? 1 : 0) - (K.q || K.pq ? 1 : 0)) * 1.8 * dt;
+
+  const c = Math.cos(camA), s = Math.sin(camA);
+  let moving = false;
+  if (rx || rz) {
+    const l = Math.hypot(rx, rz), dx = rx / l, dz = rz / l;
+    const wx = dx * c + dz * s, wz = -dx * s + dz * c;
+    P.x = Math.max(-40, Math.min(40, P.x + wx * 9 * dt));
+    P.z = Math.max(-30, Math.min(30, P.z + wz * 9 * dt));
+    pl.rotation.y = Math.atan2(wx, wz);
+    moving = true;
+  }
+
+  const w = Math.sin(t * .012);
+  pl.position.set(P.x, moving ? Math.abs(w) * .2 : 0, P.z);
+  legs[0].rotation.x = moving ? w * .8 : 0;
+  legs[1].rotation.x = moving ? -w * .8 : 0;
+
+  // 나무 흔들림, 모닥불, 눈, 구덩이 애니메이션
+  trees.forEach(tr => {
+    if (tr.cd > 0) tr.cd -= dt;
+    tr.g.rotation.z = tr.cd > 1.8 ? Math.sin(tr.cd * 45) * .06 : 0;
+  });
+  fires.forEach(f => {
+    const k = Math.sin(t * .02 + f.p.x);
+    f.f.scale.set(1 + k * .15, 1 + Math.sin(t * .031) * .3, 1 + k * .15);
+    f.l.intensity = 1.8 + Math.sin(t * .03) * .5;
+  });
+  if (snow) {
+    const p = sn.attributes.position;
+    for (let i = 0; i < 1500; i += 3) {
+      p.array[i + 1] -= 4 * dt;
+      if (p.array[i + 1] < 0) p.array[i + 1] = 22;
+    }
+    p.needsUpdate = true;
+    snowP.position.set(P.x, 0, P.z);
+  }
+  for (let i = holes.length - 1; i >= 0; i--) {
+    const h = holes[i], age = Date.now() - h.t;
+    if (age > 10000) { sc.remove(h.m); holes.splice(i, 1); }
+    else if (age > 9000) { h.m.material.transparent = true; h.m.material.opacity = 1 - (age - 9000) / 1000; }
+  }
+
+  // 고양이 출현 타이머(3분 주기) 및 다중 고양이 추적/경고 로직
+  const hasT = S.placed.some(p => p.n === '텐트');
+  const catBanner = document.getElementById('cat');
+
+  if (!cats.length) {
+    catBanner.classList.remove('cat-alert');
+    if (!hasT) {
+      catAt = null;
+      catBanner.style.display = 'none';
+    } else {
+      if (catAt === null) {
+        catAt = Date.now() + (location.hash === '#cat' ? 10 : CAT_INTERVAL) * 1000;
+      }
+      const remSec = Math.max(0, Math.ceil((catAt - Date.now()) / 1000));
+      const minLeft = Math.ceil(remSec / 60);
+      const mPart = Math.floor(remSec / 60);
+      const sPart = ('0' + (remSec % 60)).slice(-2);
+
+      catBanner.style.display = 'block';
+      if (remSec >= 60) {
+        catBanner.style.background = '#555';
+        catBanner.textContent = '🐱 고양이 출현 ' + minLeft + '분 전 (' + mPart + '분 ' + sPart + '초 남음)';
+      } else {
+        catBanner.style.background = '#d35400';
+        catBanner.textContent = '⚠️ 고양이 출현 1분 전! (' + remSec + '초 후 출현)';
+      }
+
+      if (Date.now() >= catAt) spawnCat();
+    }
+  } else if (!hasT) {
+    clearCats('🐱 텐트를 무사히 회수했어요! 고양이들이 모두 떠났어요');
+  } else {
+    const activeTents = S.placed.filter(p => p.n === '텐트');
+    let maxPunch = 0;
+    let minEta = Infinity;
+
+    for (let i = cats.length - 1; i >= 0; i--) {
+      const cObj = cats[i];
+      if (!S.placed.includes(cObj.tent)) {
+        cObj.tent = activeTents[Math.floor(Math.random() * activeTents.length)];
+        cObj.pt = 0;
+        cObj.n = 0;
+      }
+
+      const g = cObj.g;
+      const dx = cObj.tent.x - g.position.x;
+      const dz = cObj.tent.z - g.position.z;
+      const m = Math.hypot(dx, dz);
+
+      cObj.tail.rotation.z = Math.sin(t * .018 + cObj.phase) * .45;
+
+      if (m < 3.1) {
+        cObj.pt += dt;
+        g.rotation.y = Math.atan2(dx, dz);
+        g.position.y = Math.abs(Math.sin(t * .02 + cObj.phase)) * .15;
+        cObj.head.rotation.z = Math.sin(t * .025 + cObj.phase) * .18;
+        cObj.tent.g.rotation.z = Math.sin(t * .05) * .08;
+
+        const n = Math.floor(cObj.pt / .8);
+        if (n > cObj.n) {
+          cObj.n = n;
+          beep(260, .12, 'square');
+          try { navigator.vibrate && navigator.vibrate(60); } catch (e) {}
+          if (n < 5) {
+            say('🚨 경고! 고양이(' + cats.length + '마리)가 텐트를 공격 중입니다! 지금 텐트를 회수하세요! (' + n + '/5)', 1800, true);
+          }
+        }
+        maxPunch = Math.max(maxPunch, Math.min(5, cObj.n));
+        if (n >= 5) {
+          ruin(cObj.tent);
+          break;
+        }
+      } else {
+        g.position.x += dx / m * cObj.speed * dt;
+        g.position.z += dz / m * cObj.speed * dt;
+        g.rotation.y = Math.atan2(dx, dz);
+        const hop = Math.sin(t * .022 + cObj.phase);
+        g.position.y = Math.abs(hop) * .28;
+        cObj.head.rotation.z = hop * .12;
+        cObj.paws[0].rotation.x = hop * .7;
+        cObj.paws[1].rotation.x = -hop * .7;
+        cObj.paws[2].rotation.x = -hop * .7;
+        cObj.paws[3].rotation.x = hop * .7;
+
+        minEta = Math.min(minEta, Math.ceil((m - 3.1) / cObj.speed));
+      }
+    }
+
+    if (cats.length > 0) {
+      catBanner.style.display = 'block';
+      catBanner.style.background = '#c0392b';
+      catBanner.classList.add('cat-alert');
+      if (maxPunch > 0) {
+        catBanner.textContent = '🚨 경고! 고양이 ' + cats.length + '마리 공격 중 — 냥냥펀치 ' + maxPunch + '/5! 지금 즉시 텐트를 회수하세요! (📦 R)';
+      } else {
+        catBanner.textContent = '🚨 경고! 고양이 ' + cats.length + '마리 출현! 도착까지 약 ' + minEta + '초 — 지금 즉시 텐트를 회수하세요! (📦 R)';
+      }
+    }
+  }
+
+  const o = d(P, SH) < 9;
+  if (o !== wasOpen) {
+    wasOpen = o;
+    if (!o) shopHide = false;
+    ui();
+  }
+
+  cam.position.set(P.x + s * 17, 15, P.z + c * 17);
+  cam.lookAt(P.x, 1, P.z);
+  R.render(sc, cam);
+  requestAnimationFrame(loop);
+}
+
+window.onload = function () {
+  load();
+  ui();
+  requestAnimationFrame(loop);
+};
+</script>
+</body>
+</html>
