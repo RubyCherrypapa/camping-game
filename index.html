@@ -3,6 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="땅 파고 나무 쳐서 캠핑장비 모으고 고양이 냥냥펀치를 피해 텐트를 지켜라! (모바일·PC 무료 플레이)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="루비체리파파">
+<meta property="og:title" content="⛺ 캠핑장비 모으기 — 루비체리파파 3D 미니게임">
+<meta property="og:description" content="땅 파고 나무 쳐서 캠핑장비 모으고 고양이 냥냥펀치를 피해 텐트를 지켜라! (모바일·PC 무료 플레이)">
+<meta property="og:url" content="https://rubycherrypapa.github.io/camping-game/">
+<meta property="og:image" content="https://rubycherrypapa.github.io/camping-game/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="캠핑장비 모으기 3D 미니게임 화면">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="⛺ 캠핑장비 모으기 — 루비체리파파 3D 미니게임">
+<meta name="twitter:description" content="땅 파고 나무 쳐서 캠핑장비 모으고 고양이 냥냥펀치를 피해 텐트를 지켜라! (모바일·PC 무료 플레이)">
+<meta name="twitter:image" content="https://rubycherrypapa.github.io/camping-game/og.png">
 <title>캠핑장비 모으기</title>
 <style>
   :root {
@@ -127,6 +142,27 @@
   }
   #pad button {
     padding: 12px 0;
+  }
+  /* 스토어 바로가기 카드 */
+  #cta {
+    max-width: 640px;
+    margin: 10px auto 4px;
+  }
+  #cta a {
+    display: block;
+    padding: 12px 14px;
+    border: 1px solid var(--bd);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--fg);
+    text-decoration: none;
+    text-align: center;
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+  #cta a:active {
+    transform: scale(0.99);
   }
   small {
     opacity: .75;
@@ -307,6 +343,10 @@
 <div id="pad">
   <span></span><button data-k="u">▲</button><span></span>
   <button data-k="l">◀</button><button data-k="d">▼</button><button data-k="r">▶</button>
+</div>
+
+<div id="cta">
+  <a href="https://naver.me/FEgjP7vh" target="_blank" rel="noopener">🏕️ 게임 속 화로대·고글·스텐컵, 실제 스토어에서 구경하기 →</a>
 </div>
 
 <!-- 커스텀 초기화 확인 대화상자 -->
