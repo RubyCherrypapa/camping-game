@@ -247,17 +247,23 @@
     animation: pulseWarn .85s infinite;
     border: 2px solid #ffeb3b;
   }
+  #invPanel {
+    display: none; position: absolute; left: 8px; right: 8px; top: 8px; max-height: 50%;
+    overflow: auto; z-index: 7; box-sizing: border-box; padding: 8px;
+    background: var(--card); border: 2px solid var(--bd); border-radius: 10px;
+  }
+  #invPanel .row { margin: 6px 0 0; }
   #toast {
     position: absolute;
     left: 50%;
-    top: 50%;
-    transform: translate(-50%, -60%) scale(.95);
+    top: 64px;
+    transform: translate(-50%, -8px) scale(.95);
     max-width: 84%;
     padding: 12px 18px;
     border-radius: 16px;
     background: rgba(0, 0, 0, .8);
     color: #fff;
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 700;
     text-align: center;
     line-height: 1.35;
@@ -306,18 +312,22 @@
     <div class="row" id="shopItems"></div>
     <div class="row" id="sellItems"></div>
   </div>
+  <div id="invPanel"><b>🎒 인벤토리</b> <button id="invx" style="float:right">✕ 닫기</button><br><small>눌러서 설치 · 🏮 랜턴은 머리에 착용 · 🧸 장난감: 들고 다니며 흔들어 고양이 퇴치(고급츄르 획득) · 🐟 고급츄르: 고양이 길들이기 · ⛺ 텐트는 캠핑 구역에서만(대여료 10원) · 🔥 불은 스트링끈 1개 사용</small><div class="row" id="inv"></div></div>
   <div id="toast"></div>
   <div id="joy"><div id="knob"></div></div>
   <div id="cams">
     <button class="hold" data-k="q" title="카메라 왼쪽 회전">⟲</button>
     <button class="hold" data-k="e" title="카메라 오른쪽 회전">⟳</button>
     <button id="tshop" title="상점 열기">🛒</button>
+    <button id="tinv" title="인벤토리">🎒</button>
   </div>
   <div id="acts">
     <button id="tdig" title="땅파기">⛏️</button>
     <button id="thit" title="나무치기">🔨</button>
     <button id="tfire" title="불 피우기">🔥</button>
     <button id="tpick" title="회수">📦</button>
+    <button id="tsit" title="앉기/눕기">🪑</button>
+    <button id="ttoy" title="고양이 장난감">🧸</button>
   </div>
 </div>
 
@@ -334,11 +344,7 @@
   <button id="br">🗑️ 초기화</button>
 </div>
 
-<div>
-  <b>🎒 인벤토리</b>
-  <small>눌러서 설치(🏮 랜턴은 머리에 착용) · ⛺ 텐트는 캠핑 구역(A/B/C)에서만, 땅 대여료 10원 · 🔥 불은 스트링끈 1개 사용</small>
-</div>
-<div class="row" id="inv"></div>
+
 
 <div id="pad">
   <span></span><button data-k="u">▲</button><span></span>
@@ -363,10 +369,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // 아이템 아이콘 및 확률/가격 설정
-const IC = {'팩':'📌','화로대':'🔥','스트링끈':'🧵','선글라스':'🕶️','컵':'☕','금화':'🪙','식기류':'🍴','텐트':'⛺','의자':'🪑','테이블':'🍽️','랜턴':'🏮','담요':'🧣','그릴':'🍖','해먹':'🌴'};
+const IC = {'고양이장난감':'🧸','고급츄르':'🐟','팩':'📌','화로대':'🔥','스트링끈':'🧵','선글라스':'🕶️','컵':'☕','금화':'🪙','식기류':'🍴','텐트':'⛺','의자':'🪑','테이블':'🍽️','랜턴':'🏮','담요':'🧣','그릴':'🍖','해먹':'🌴'};
 const DIG = [['팩',50],['스트링끈',35],['화로대',15]];
 const TREE = [['선글라스',20],['컵',30],['금화',20],['식기류',30]];
-const SHOP = {'텐트':30,'의자':8,'테이블':15,'랜턴':10,'화로대':20,'담요':12,'그릴':18,'해먹':25};
+const SHOP = {'텐트':30,'의자':8,'테이블':15,'랜턴':10,'화로대':20,'담요':12,'그릴':18,'해먹':25,'고양이장난감':15};
 const SELL = {'선글라스':5,'컵':3,'금화':8,'식기류':3,'팩':1,'스트링끈':1};
 const NEED = ['텐트','화로대','의자','테이블','랜턴'];
 const RENT = 10;
@@ -374,10 +380,12 @@ const RENT = 10;
 // 고양이 출현 빈도: 3분 (180초)
 const CAT_INTERVAL = 180;
 
-const S = {money:0, inv:{}, placed:[], done:false, lamp:false};
+const S = {money:0, inv:{}, placed:[], done:false, lamp:false, pets:0, rank:0, toy:false};
 const P = {x:-24, z:18};
 let T = 30, snow = false, camA = 0, night = 0, wasNight = false;
 let catAt = null, cats = [], catDone = false;
+const pets = [], fleeing = [];
+let rest = null, spark = null, invOpen = false, toyCd = 0, toySwing = 0;
 
 // Three.js 씬 및 렌더러 초기화
 const cv = document.getElementById('c');
@@ -493,6 +501,12 @@ const legs = [-.2, .2].map(x => {
   pl.add(l);
   return l;
 });
+const outfit = new THREE.Group(); pl.add(outfit);
+const toyG = new THREE.Group();
+{ const a = M(new THREE.CylinderGeometry(.04, .04, 1.1, 6), 0x8a5a2b); a.position.y = .55; toyG.add(a);
+  const b = M(new THREE.SphereGeometry(.2, 10, 8), 0xff5c8a); b.position.y = 1.15; toyG.add(b);
+  const c = M(new THREE.ConeGeometry(.12, .4, 6), 0x4cc9f0); c.position.set(.15, 1.3, 0); c.rotation.z = -.8; toyG.add(c); }
+toyG.position.set(.7, 1.0, .3); toyG.rotation.x = .6; toyG.visible = false; pl.add(toyG);
 sc.add(pl);
 
 // 눈 파티클
@@ -522,11 +536,11 @@ function say(t, dur, isWarn) {
   e.textContent = t;
   e.style.background = isWarn ? 'rgba(192, 57, 43, .92)' : 'rgba(0, 0, 0, .8)';
   e.style.opacity = 1;
-  e.style.transform = 'translate(-50%,-50%) scale(1)';
+  e.style.transform = 'translate(-50%,0) scale(1)';
   clearTimeout(tt);
   tt = setTimeout(() => {
     e.style.opacity = 0;
-    e.style.transform = 'translate(-50%,-60%) scale(.95)';
+    e.style.transform = 'translate(-50%,-8px) scale(.95)';
   }, dur || 2600);
 }
 
@@ -657,6 +671,8 @@ function useSpot(s) {
 
 // 아이템 설치
 function place(n) {
+  if (n === '고양이장난감') return useToy();
+  if (n === '고급츄르') return useChurr();
   if (n === '랜턴' && S.inv[n]) {
     S.inv[n]--;
     S.lamp = true;
@@ -684,7 +700,7 @@ function place(n) {
   }
   if (d(P, SH) < 7) return say('산장 앞에는 설치할 수 없어요');
   S.inv[n]--;
-  put(n, P.x + Math.sin(pl.rotation.y) * 2, P.z + Math.cos(pl.rotation.y) * 2, pl.rotation.y);
+  placeItem(n);
   beep(400, .12);
   say(IC[n] + n + ' 설치!' + (n === '화로대' ? ' 가까이서 불 피우기(F)를 눌러보세요' : ''));
   checkDone();
@@ -820,7 +836,17 @@ function spawnCat() {
   if (!tents.length) { catAt = null; return; }
 
   // 최소 1마리 ~ 최대 3마리 랜덤 출현
-  const count = 1 + Math.floor(Math.random() * 3);
+  let count = 1 + Math.floor(Math.random() * 3);
+  if (pets.length) {
+    const blocked = Math.min(pets.length, count);
+    count -= blocked;
+    beep(520, .15); setTimeout(() => beep(660, .2), 160);
+    if (count <= 0) {
+      catAt = null; catDone = true;
+      say('🐱🛡️ 길들인 고양이 ' + pets.length + '마리가 몰려온 고양이 ' + blocked + '마리를 모두 막아냈어요!', 4000);
+      return;
+    }
+  }
   for (let i = 0; i < count; i++) {
     const tent = tents[Math.floor(Math.random() * tents.length)];
     const model = mkCat(i);
@@ -850,7 +876,7 @@ function spawnCat() {
   const el = document.getElementById('cat');
   el.style.background = '#c0392b';
   el.classList.add('cat-alert');
-  say('🚨 경고! 고양이 ' + count + '마리가 나타났습니다! 지금 즉시 텐트를 회수하세요!', 4500, true);
+  say('🚨 경고! 고양이 ' + count + '마리 출현! 텐트를 회수하거나, 고양이장난감을 이용해 퇴치하세요.', 4500, true);
 }
 
 function clearCats(msg) {
@@ -891,6 +917,7 @@ function pickup() {
   if (!p || d(p, P) > 5) return say('회수할 아이템 가까이로 가세요');
   sc.remove(p.g);
   S.placed.splice(S.placed.indexOf(p), 1);
+  if (p.n === '테이블') S.placed.forEach(q => { if (q.y && Math.hypot(q.x - p.x, q.z - p.z) < 1.6) { q.y = 0; q.g.position.y = 0; } });
   const fi = fires.findIndex(f => f.p === p);
   if (fi >= 0) fires.splice(fi, 1);
   p.g.children.forEach(c => {
@@ -916,6 +943,7 @@ function pickup() {
 // 상점 구매 및 판매
 function buy(n) {
   const p = SHOP[n];
+  if (n === '고양이장난감' && (S.toy || S.inv[n] > 0)) return say('이미 고양이 장난감이 있어요');
   if (S.money < p) return say('돈이 부족해요 (' + p + '원 필요)');
   S.money -= p;
   S.inv[n] = (S.inv[n] || 0) + 1;
@@ -937,8 +965,8 @@ function sell(n) {
 function save() {
   try {
     localStorage.setItem('camp3d', JSON.stringify({
-      m: S.money, i: S.inv, p: S.placed.map(({n, x, z, rot, lit}) => ({n, x, z, rot, lit})),
-      h: [], x: P.x, z: P.z, T, d: S.done, l: S.lamp, c: catDone
+      m: S.money, i: S.inv, p: S.placed.map(({n, x, z, rot, lit, y}) => ({n, x, z, rot, lit, y})),
+      h: [], ty: S.toy, pt: S.pets, rk: S.rank, x: P.x, z: P.z, T, d: S.done, l: S.lamp, c: catDone
     }));
   } catch (e) {}
 }
@@ -952,27 +980,183 @@ function load() {
     S.done = !!j.d;
     S.lamp = !!j.l;
     catDone = !!j.c;
+    S.pets = j.pt || 0;
+    S.toy = !!j.ty;
+    S.rank = j.rk || 0;
     P.x = j.x;
     P.z = j.z;
     T = j.T || 30;
     (j.p || []).forEach(p => {
-      put(p.n, p.x, p.z, p.rot, p.lit);
+      const pp = put(p.n, p.x, p.z, p.rot, p.lit);
+      if (p.y) { pp.y = p.y; pp.g.position.y = p.y; }
       const s = p.n === '텐트' && spots.find(s => s.x === p.x && s.z === p.z);
       if (s) useSpot(s);
     });
+    for (let i = 0; i < S.pets; i++) addPet();
     say('이전 진행 상황을 불러왔어요');
   } catch (e) {}
+}
+
+// ===== 고양이 장난감 / 츄르 / 길들이기 =====
+let crkT = 0, noiseBuf = null;
+function crackle(vol) {
+  try {
+    AC = AC || new AudioContext();
+    if (AC.state === 'suspended') AC.resume();
+    if (!noiseBuf) { noiseBuf = AC.createBuffer(1, AC.sampleRate * .3, AC.sampleRate); const nd = noiseBuf.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1; }
+    const src = AC.createBufferSource(), flt = AC.createBiquadFilter(), g = AC.createGain(), t0 = AC.currentTime, dur = .02 + Math.random() * .07;
+    src.buffer = noiseBuf; flt.type = 'bandpass'; flt.frequency.value = 700 + Math.random() * 3500; flt.Q.value = .8;
+    g.gain.setValueAtTime(vol * (.05 + Math.random() * .12), t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    src.connect(flt); flt.connect(g); g.connect(AC.destination);
+    src.start(t0, Math.random() * .2, dur + .02);
+  } catch (e) {}
+}
+function nearCat(r) {
+  let b = null, bd = r;
+  cats.forEach(c => { const dd = Math.hypot(c.g.position.x - P.x, c.g.position.z - P.z); if (dd < bd) { bd = dd; b = c; } });
+  return b;
+}
+function useToy() {
+  if (!S.toy) {
+    if (S.inv['고양이장난감'] > 0) { S.inv['고양이장난감']--; S.toy = true; say('🧸 고양이 장난감을 들었어요! 🧸 버튼으로 흔들어 고양이를 쫓아요'); ui(); }
+    else say('🧸 상점에서 고양이 장난감을 먼저 사세요 (15원)');
+    return;
+  }
+  if (toyCd > 0) return;
+  toySwing = .5; toyCd = 1.2;
+  const near = cats.filter(c => Math.hypot(c.g.position.x - P.x, c.g.position.z - P.z) < 10);
+  if (!near.length) { beep(300, .1); return say('🧸 장난감을 흔들었지만 근처에 고양이가 없어요. 고양이 가까이로 가세요!'); }
+  near.forEach(c => { cats.splice(cats.indexOf(c), 1); fleeing.push({g: c.g, t: 0}); });
+  S.inv['고급츄르'] = (S.inv['고급츄르'] || 0) + 1;
+  beep(700, .15); setTimeout(() => beep(900, .2), 150);
+  say('🧸 고양이 ' + near.length + '마리가 장난감에 정신이 팔려 도망갔어요! 🐟 고급츄르 1개를 떨어뜨렸어요' + (near.length > 1 ? ' (여러 마리여도 츄르는 1개)' : ''), 3500);
+  if (!cats.length) clearCats('🧸 고양이를 모두 물리쳤어요!'); else ui();
+}
+function useChurr() {
+  if (!S.inv['고급츄르']) return;
+  const c = nearCat(14);
+  if (!c) return say('🐟 츄르를 줄 고양이가 근처에 없어요. 고양이 웨이브 때 가까이 가세요!');
+  if (pets.length >= 5) return say('길들인 고양이는 최대 5마리예요');
+  S.inv['고급츄르']--;
+  cats.splice(cats.indexOf(c), 1);
+  S.pets++;
+  addPet(c);
+  beep(800, .15); setTimeout(() => beep(1000, .25), 150);
+  say('🐟 고급츄르로 길들였어요! 이제 다음 웨이브를 막아줘요 (길들인 고양이 ' + S.pets + '마리)', 3500);
+  if (!cats.length) clearCats('🐱 남은 고양이가 없어요. 길들인 고양이와 함께 안전해요!'); else ui();
+}
+function addPet(c) {
+  const m = c || mkCat(pets.length);
+  m.g.scale.setScalar(.95);
+  if (!c) { m.g.position.set(P.x + 2, 0, P.z + 2); sc.add(m.g); }
+  pets.push({g: m.g, head: m.head, tail: m.tail, paws: m.paws, phase: Math.random() * 6});
+}
+
+// ===== 캠퍼 등급 / 옷 / 반짝이 =====
+const RANKS = ['초보', '가성비캠퍼', '감성캠퍼', '맥시멀캠퍼', '미니멀캠퍼', '자연인캠퍼'];
+function cyl(a, b, h, c, x, y, z) { const m = M(new THREE.CylinderGeometry(a, b, h, 12), c); m.position.set(x, y, z); outfit.add(m); return m; }
+function bx(w, h, dd, c, x, y, z) { const m = box(w, h, dd, c); m.position.set(x, y, z); outfit.add(m); return m; }
+function tor(r, th, c, y) { const m = M(new THREE.TorusGeometry(r, th, 8, 16), c); m.rotation.x = Math.PI / 2; m.position.y = y; outfit.add(m); return m; }
+function setOutfit(r) {
+  while (outfit.children.length) outfit.remove(outfit.children[0]);
+  pb.material.color.set([0x7a8fa6, 0x2f6fd0, 0xf1e3c8, 0xd94f70, 0x222222, 0xdeb887][r]);
+  legs.forEach(l => l.material.color.set([0x445566, 0x3b4a6b, 0xc9b48c, 0x6a4fb3, 0x222222, 0xdeb887][r]));
+  if (r === 1) { // 가성비: 형광 조끼 + 버킷햇
+    cyl(.56, .56, .9, 0xff9f1c, 0, 1.1, 0); cyl(.72, .72, .06, 0x8a7f55, 0, 2.4, 0); cyl(.4, .46, .32, 0x8a7f55, 0, 2.58, 0);
+  } else if (r === 2) { // 감성: 리넨 재킷 + 스카프 + 밀짚모자
+    cyl(.57, .57, 1, 0xe9d8b4, 0, 1, 0); tor(.5, .12, 0xe07a5f, 1.6);
+    cyl(.98, .98, .05, 0xe3c77d, 0, 2.4, 0); cyl(.42, .46, .36, 0xe3c77d, 0, 2.6, 0); cyl(.47, .47, .08, 0xc0504d, 0, 2.47, 0);
+  } else if (r === 3) { // 맥시멀: 큰 배낭 + 알록달록 + 선글라스 + 뾰족모자
+    bx(1.1, 1.4, .6, 0xd1495b, 0, 1.1, -.8); bx(.4, .4, .3, 0x00798c, -.45, .6, -1.2); bx(.4, .4, .3, 0xedae49, .45, .6, -1.2);
+    tor(.52, .07, 0xffd166, .6); tor(.52, .07, 0x06d6a0, .95); tor(.52, .07, 0x118ab2, 1.3);
+    [-.2, .2].forEach((x, i) => { const l = M(new THREE.CylinderGeometry(.17, .17, .06, 10), i ? 0xff3d9a : 0x20c997); l.rotation.x = Math.PI / 2; l.position.set(x, 2.02, .45); outfit.add(l); });
+    const hat = M(new THREE.ConeGeometry(.45, .9, 10), 0xef476f); hat.position.y = 2.85; outfit.add(hat);
+    const pom = M(new THREE.SphereGeometry(.14, 8, 6), 0xffd166); pom.position.y = 3.35; outfit.add(pom);
+    cyl(.12, .1, .28, 0xb8bcc2, .62, .5, .15);
+  } else if (r === 4) { // 미니멀: 올블랙 + 흰 캡
+    cyl(.54, .54, 1, 0x2b2b2b, 0, 1, 0); tor(.5, .04, 0xffffff, 1.45); cyl(.5, .5, .12, 0xf5f5f5, 0, 2.42, 0);
+  } else if (r === 5) { // 자연인: 나뭇잎 치마 + 덩굴 + 잎사귀 왕관 (타잔)
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, l = M(new THREE.ConeGeometry(.26, .7, 4), i % 2 ? 0x2e9e4a : 0x3fbf5a); l.rotation.x = Math.PI; l.position.set(Math.sin(a) * .5, .8, Math.cos(a) * .5); outfit.add(l); }
+    const v = M(new THREE.TorusGeometry(.5, .05, 6, 16), 0x3f7d32); v.rotation.set(Math.PI / 2 - .5, 0, .6); v.position.y = 1.3; outfit.add(v);
+    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3, l = M(new THREE.ConeGeometry(.12, .4, 4), 0x2e9e4a); l.position.set(Math.sin(a) * .4, 2.5, Math.cos(a) * .4); outfit.add(l); }
+  }
+}
+function sparkle(r) {
+  const n = 70, pos = new Float32Array(n * 3), vel = [];
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.28, sp = 2 + Math.random() * 3;
+    vel.push([Math.cos(a) * sp, Math.random() * 3 + 2, Math.sin(a) * sp]);
+    pos[i * 3] = P.x; pos[i * 3 + 1] = 1.5; pos[i * 3 + 2] = P.z;
+  }
+  const gm = new THREE.BufferGeometry(); gm.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(gm, new THREE.PointsMaterial({color: 0xffe066, size: .5, transparent: true}));
+  if (spark) sc.remove(spark.pts);
+  sc.add(pts); spark = {pts, vel, t: 0};
+  beep(660, .15); setTimeout(() => beep(880, .15), 150); setTimeout(() => beep(1100, .3), 300);
+  try { navigator.vibrate && navigator.vibrate([60, 40, 60, 40, 120]); } catch (e) {}
+  say('✨ 캠퍼 등급 UP! ' + RANKS[r] + ' 🎉 새 옷으로 갈아입었어요', 3500);
+}
+function checkRank() {
+  const r = Math.min(5, Math.floor(score() / 50));
+  if (r > S.rank) { S.rank = r; setOutfit(r); sparkle(r); }
+}
+
+// ===== 아이템 배치(테이블 위 / 화로대 옆 의자) =====
+function placeItem(n) {
+  const fy = pl.rotation.y;
+  let x = P.x + Math.sin(fy) * 2, z = P.z + Math.cos(fy) * 2, rot = fy, y = 0, note = '';
+  const dist = (q) => Math.hypot(q.x - x, q.z - z);
+  if (['컵', '식기류', '선글라스', '금화'].includes(n)) {
+    const tb = S.placed.filter(q => q.n === '테이블' && dist(q) < 4).sort((a, b) => dist(a) - dist(b))[0];
+    if (tb) {
+      const lx = Math.random() * 1.6 - .8, lz = Math.random() * .8 - .4, c = Math.cos(tb.rot), s = Math.sin(tb.rot);
+      x = tb.x + lx * c + lz * s; z = tb.z - lx * s + lz * c; rot = tb.rot; y = 1.2; note = ' (테이블 위에 올렸어요)';
+    }
+  } else if (n === '의자') {
+    const f = S.placed.filter(q => q.n === '화로대' && dist(q) < 5.5).sort((a, b) => dist(a) - dist(b))[0];
+    if (f) {
+      const a0 = Math.atan2(x - f.x, z - f.z);
+      for (let k = 0; k < 8; k++) {
+        const a = a0 + k * .75; x = f.x + Math.sin(a) * 3.2; z = f.z + Math.cos(a) * 3.2;
+        if (!S.placed.some(q => q.n === '의자' && Math.hypot(q.x - x, q.z - z) < 1.8)) break;
+      }
+      rot = Math.atan2(f.x - x, f.z - z); note = ' (화로대 쪽을 바라보게 놓았어요)';
+    }
+  }
+  const p = put(n, x, z, rot);
+  if (y) { p.y = y; p.g.position.y = y; }
+  if (note) say(IC[n] + n + ' 설치!' + note);
+}
+
+// ===== 앉기 / 눕기 =====
+function endRest() {
+  if (!rest) return;
+  pl.rotation.set(0, rest.p.rot, 0, 'XYZ'); rest = null;
+}
+function restAct() {
+  if (rest) { endRest(); return say('일어났어요'); }
+  const c = S.placed.filter(p => (p.n === '의자' || p.n === '해먹') && d(p, P) < 4).sort((a, b) => d(a, P) - d(b, P))[0];
+  if (!c) return say('의자나 해먹 가까이에서 눌러 보세요 🪑');
+  rest = {p: c, type: c.n === '의자' ? 'sit' : 'lie'};
+  beep(450, .15);
+  say(c.n === '의자' ? '🪑 의자에 앉았어요. 조이스틱을 움직이면 일어나요' : '🌴 해먹에 누웠어요. 조이스틱을 움직이면 일어나요');
+}
+function toggleInv() {
+  invOpen = !invOpen;
+  document.getElementById('invPanel').style.display = invOpen ? 'block' : 'none';
+  ui();
 }
 
 // UI 업데이트
 let built = false, shopHide = false;
 function ui() {
+  checkRank();
   document.getElementById('money').textContent = S.money;
-  document.getElementById('sc').textContent = (night > .5 ? '🌙 밤' : '☀️ 낮') + ' · 캠핑 점수 ' + score();
+  document.getElementById('sc').textContent = (night > .5 ? '🌙 밤' : '☀️ 낮') + ' · ' + RANKS[S.rank] + ' · 점수 ' + score() + (S.pets ? ' · 🐱' + S.pets : '');
   const inv = document.getElementById('inv');
   inv.innerHTML = '';
   const ks = Object.keys(S.inv).filter(k => S.inv[k] > 0);
-  if (!ks.length && !S.lamp) inv.innerHTML = '<small>비어 있어요. 땅을 파거나 나무를 쳐보세요!</small>';
+  if (!ks.length && !S.lamp && !S.toy) inv.innerHTML = '<small>비어 있어요. 땅을 파거나 나무를 쳐보세요!</small>';
   ks.forEach(k => {
     const b = document.createElement('button');
     b.className = 'chip';
@@ -980,6 +1164,13 @@ function ui() {
     b.onclick = () => place(k);
     inv.appendChild(b);
   });
+  if (S.toy) {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = '🧸 장난감 들고있음 (넣기)';
+    b.onclick = () => { S.toy = false; S.inv['고양이장난감'] = (S.inv['고양이장난감'] || 0) + 1; say('🧸 장난감을 넣었어요'); ui(); };
+    inv.appendChild(b);
+  }
   if (S.lamp) {
     const b = document.createElement('button');
     b.className = 'chip';
@@ -992,7 +1183,7 @@ function ui() {
     };
     inv.appendChild(b);
   }
-  const open = d(P, SH) < 9 && !shopHide;
+  const open = d(P, SH) < 9 && !shopHide && !invOpen;
   document.getElementById('shop').style.display = open ? 'block' : 'none';
   if (open && !built) {
     built = true;
@@ -1026,7 +1217,7 @@ document.getElementById('bp').onclick = pickup;
 document.getElementById('shopx').onclick = () => { shopHide = true; ui(); };
 document.getElementById('tshop').onclick = () => {
   if (d(P, SH) >= 9) say('산장 근처에서 상점을 열 수 있어요');
-  else { shopHide = false; ui(); }
+  else { shopHide = false; invOpen = false; document.getElementById('invPanel').style.display = 'none'; ui(); }
 };
 document.getElementById('bs').onclick = () => {
   snow = !snow;
@@ -1034,6 +1225,12 @@ document.getElementById('bs').onclick = () => {
   gr.material.color.set(snow ? 0xe8f0f5 : 0x7fbf5a);
   say(snow ? '❄️ 눈이 내려요' : '눈이 그쳤어요');
 };
+
+document.getElementById('tinv').onclick = toggleInv;
+document.getElementById('invx').onclick = toggleInv;
+document.getElementById('tsit').onclick = restAct;
+document.getElementById('ttoy').onclick = useToy;
+addEventListener('keydown', e => { const k = e.key.toLowerCase(); if (k === 'c') restAct(); if (k === 'v') useToy(); if (k === 'i') toggleInv(); });
 
 // 커스텀 초기화 모달 동작
 const resetModal = document.getElementById('resetModal');
@@ -1132,7 +1329,9 @@ function loop(t) {
 
   const c = Math.cos(camA), s = Math.sin(camA);
   let moving = false;
-  if (rx || rz) {
+  if (rest && !S.placed.includes(rest.p)) endRest();
+  if (rest && Math.hypot(rx, rz) > .3) { endRest(); say('일어났어요'); }
+  if (!rest && (rx || rz)) {
     const l = Math.hypot(rx, rz), dx = rx / l, dz = rz / l;
     const wx = dx * c + dz * s, wz = -dx * s + dz * c;
     P.x = Math.max(-40, Math.min(40, P.x + wx * 9 * dt));
@@ -1142,9 +1341,20 @@ function loop(t) {
   }
 
   const w = Math.sin(t * .012);
-  pl.position.set(P.x, moving ? Math.abs(w) * .2 : 0, P.z);
-  legs[0].rotation.x = moving ? w * .8 : 0;
-  legs[1].rotation.x = moving ? -w * .8 : 0;
+  if (rest && rest.type === 'sit') {
+    P.x = rest.p.x; P.z = rest.p.z; pl.rotation.y = rest.p.rot;
+    pl.position.set(P.x, .05, P.z);
+    legs[0].rotation.x = legs[1].rotation.x = -1.4;
+  } else if (rest) {
+    const r = rest.p.rot; P.x = rest.p.x; P.z = rest.p.z;
+    pl.rotation.set(-Math.PI / 2, r - Math.PI / 2, 0, 'YXZ');
+    pl.position.set(P.x - Math.cos(r) * 1.2, 1.75, P.z + Math.sin(r) * 1.2);
+    legs[0].rotation.x = legs[1].rotation.x = 0;
+  } else {
+    pl.position.set(P.x, moving ? Math.abs(w) * .2 : 0, P.z);
+    legs[0].rotation.x = moving ? w * .8 : 0;
+    legs[1].rotation.x = moving ? -w * .8 : 0;
+  }
 
   // 나무 흔들림, 모닥불, 눈, 구덩이 애니메이션
   trees.forEach(tr => {
@@ -1235,7 +1445,7 @@ function loop(t) {
           beep(260, .12, 'square');
           try { navigator.vibrate && navigator.vibrate(60); } catch (e) {}
           if (n < 5) {
-            say('🚨 경고! 고양이(' + cats.length + '마리)가 텐트를 공격 중입니다! 지금 텐트를 회수하세요! (' + n + '/5)', 1800, true);
+            say('🚨 경고! 고양이(' + cats.length + '마리)가 텐트를 공격 중! 텐트를 회수하거나, 고양이장난감으로 퇴치하세요! (' + n + '/5)', 1800, true);
           }
         }
         maxPunch = Math.max(maxPunch, Math.min(5, cObj.n));
@@ -1264,11 +1474,47 @@ function loop(t) {
       catBanner.style.background = '#c0392b';
       catBanner.classList.add('cat-alert');
       if (maxPunch > 0) {
-        catBanner.textContent = '🚨 경고! 고양이 ' + cats.length + '마리 공격 중 — 냥냥펀치 ' + maxPunch + '/5! 지금 즉시 텐트를 회수하세요! (📦 R)';
+        catBanner.textContent = '🚨 경고! 고양이 ' + cats.length + '마리 공격 중 — 냥냥펀치 ' + maxPunch + '/5! 텐트를 회수하거나, 고양이장난감을 이용해 퇴치하세요.';
       } else {
-        catBanner.textContent = '🚨 경고! 고양이 ' + cats.length + '마리 출현! 도착까지 약 ' + minEta + '초 — 지금 즉시 텐트를 회수하세요! (📦 R)';
+        catBanner.textContent = '🚨 경고! 고양이 ' + cats.length + '마리 출현! 도착까지 약 ' + minEta + '초 — 텐트를 회수하거나, 고양이장난감을 이용해 퇴치하세요.';
       }
     }
+  }
+
+  crkT -= dt;
+  if (crkT <= 0) {
+    crkT = .06 + Math.random() * .3;
+    if (fires.length) { const nd = Math.min(...fires.map(f => d(f.p, P))), v = Math.max(0, 1 - nd / 22); if (v > .05) crackle(v); }
+  }
+  toyG.visible = S.toy && !rest;
+  if (toyCd > 0) toyCd -= dt;
+  if (toySwing > 0) { toySwing -= dt; toyG.rotation.x = .6 + Math.sin((.5 - toySwing) / .5 * Math.PI * 3) * .9; } else toyG.rotation.x = .6;
+  // 길들인 고양이 따라다니기 / 도망가는 고양이 / 반짝이
+  pets.forEach((p, i) => {
+    const g = p.g, ang = (rest ? 0 : pl.rotation.y) + Math.PI + (i - (pets.length - 1) / 2) * .8;
+    const tx = P.x + Math.sin(ang) * 3.2, tz = P.z + Math.cos(ang) * 3.2, dx = tx - g.position.x, dz = tz - g.position.z, m = Math.hypot(dx, dz);
+    if (m > 40) { g.position.x = tx; g.position.z = tz; }
+    else if (m > .6) {
+      const v = Math.min(m, 8 * dt * (m > 3 ? 1.4 : 1));
+      g.position.x += dx / m * v; g.position.z += dz / m * v; g.rotation.y = Math.atan2(dx, dz);
+      const hop = Math.sin(t * .022 + p.phase); g.position.y = Math.abs(hop) * .25;
+      p.paws[0].rotation.x = hop * .7; p.paws[1].rotation.x = -hop * .7; p.paws[2].rotation.x = -hop * .7; p.paws[3].rotation.x = hop * .7;
+    } else { g.position.y = 0; p.tail.rotation.z = Math.sin(t * .01 + p.phase) * .5; }
+  });
+  for (let i = fleeing.length - 1; i >= 0; i--) {
+    const fl = fleeing[i]; fl.t += dt;
+    fl.g.position.x -= 11 * dt; fl.g.rotation.y = -Math.PI / 2; fl.g.position.y = Math.abs(Math.sin(t * .03)) * .4;
+    if (fl.t > 2.2) { sc.remove(fl.g); fleeing.splice(i, 1); }
+  }
+  if (spark) {
+    spark.t += dt;
+    const pa = spark.pts.geometry.attributes.position;
+    for (let i = 0; i < spark.vel.length; i++) {
+      const v = spark.vel[i];
+      pa.array[i * 3] += v[0] * dt; pa.array[i * 3 + 1] += v[1] * dt; pa.array[i * 3 + 2] += v[2] * dt; v[1] -= 5 * dt;
+    }
+    pa.needsUpdate = true; spark.pts.material.opacity = Math.max(0, 1 - spark.t / 1.6);
+    if (spark.t > 1.6) { sc.remove(spark.pts); spark = null; }
   }
 
   const o = d(P, SH) < 9;
@@ -1286,6 +1532,7 @@ function loop(t) {
 
 window.onload = function () {
   load();
+  setOutfit(S.rank);
   ui();
   requestAnimationFrame(loop);
 };
